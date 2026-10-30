@@ -1,0 +1,11 @@
+node_modules/
+.DS_Store
+*.log
+.env
+.env.*
+!.env.example
+
+# private local agent workflow — do not publish
+.trellis/
+.agents/
+.openviking/
