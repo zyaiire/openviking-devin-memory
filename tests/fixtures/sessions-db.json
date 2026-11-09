@@ -1,0 +1,55 @@
+{
+  "_comment": "Synthetic sessions.db slices. Topology mirrors chains measured on Devin CLI 3000.11.205 (schema 20); all ids and text are invented.",
+  "schemaVersion": 20,
+  "sessions": [
+    {
+      "id": "fixture-compact",
+      "main_chain_id": 17,
+      "nodes": [
+        { "node_id": 1, "parent": null, "role": "system", "message_id": "m-prefix-a", "content": "You are Devin.", "node_meta": { "is_system_prefix": true } },
+        { "node_id": 2, "parent": 1, "role": "system", "message_id": "m-prefix-b", "content": "Workspace rules.", "node_meta": { "is_system_prefix": true } },
+        { "node_id": 3, "parent": 2, "role": "user", "message_id": "m-user-1", "is_user_input": true, "content": "<openviking-context source=\"recall\">\n<memory uri=\"viking://user/default/memories/x.md\">old</memory>\n</openviking-context>\nHow do I rotate the staging API key?" },
+        { "node_id": 4, "parent": 3, "role": "system", "message_id": "m-sys-mid", "content": "Environment changed: 2 files modified." },
+        { "node_id": 5, "parent": 4, "role": "assistant", "message_id": "m-asst-tool", "content": "", "tool_calls": [{ "id": "call-1", "type": "function", "function": { "name": "read", "arguments": "{}" } }] },
+        { "node_id": 6, "parent": 5, "role": "tool", "message_id": "m-tool-1", "tool_call_id": "call-1", "content": "ops/README.md: rotate with ops rotate" },
+        { "node_id": 7, "parent": 6, "role": "assistant", "message_id": "m-asst-1", "content": "Run `ops rotate --env staging`, then update the vault entry." },
+        { "node_id": 8, "parent": 7, "role": "user", "message_id": "m-user-injected", "content": "<system-reminder>\nTodo list is empty.\n</system-reminder>" },
+        { "node_id": 9, "parent": 8, "role": "user", "message_id": "m-user-2", "is_user_input": true, "content": "Where is the vault entry stored?" },
+        { "node_id": 10, "parent": 9, "role": "assistant", "message_id": "m-asst-2", "content": "It lives under infra/staging/api-key in the vault." },
+        { "node_id": 11, "parent": null, "role": "system", "message_id": "m-prefix-a", "content": "You are Devin.", "node_meta": { "is_system_prefix": true } },
+        { "node_id": 12, "parent": 11, "role": "assistant", "message_id": "m-summarizer", "phase": "final_answer", "content": "Summary: the user rotated the staging key.", "node_meta": { "summarized_from": 10 } },
+        { "node_id": 13, "parent": null, "role": "system", "message_id": "m-prefix-a", "content": "You are Devin.", "node_meta": { "is_system_prefix": true } },
+        { "node_id": 14, "parent": 13, "role": "system", "message_id": "m-prefix-b", "content": "Workspace rules." },
+        { "node_id": 15, "parent": 14, "role": "system", "message_id": "m-summary", "content": "Summary: the user rotated the staging key.", "node_meta": { "summarized_from": 10 } },
+        { "node_id": 16, "parent": 15, "role": "user", "message_id": "m-user-3", "is_user_input": true, "content": "Next, add a CI check for key age." },
+        { "node_id": 17, "parent": 16, "role": "assistant", "message_id": "m-asst-3", "content": "Added `.github/workflows/key-age.yml`." }
+      ],
+      "expected": [
+        { "role": "user", "content": "How do I rotate the staging API key?", "turnId": "m-user-1" },
+        { "role": "assistant", "content": "Run `ops rotate --env staging`, then update the vault entry.", "turnId": "m-asst-1" },
+        { "role": "user", "content": "Where is the vault entry stored?", "turnId": "m-user-2" },
+        { "role": "assistant", "content": "It lives under infra/staging/api-key in the vault.", "turnId": "m-asst-2" },
+        { "role": "user", "content": "Next, add a CI check for key age.", "turnId": "m-user-3" },
+        { "role": "assistant", "content": "Added `.github/workflows/key-age.yml`.", "turnId": "m-asst-3" }
+      ]
+    },
+    {
+      "id": "fixture-resume",
+      "main_chain_id": 6,
+      "nodes": [
+        { "node_id": 1, "parent": null, "role": "system", "message_id": "r-prefix", "content": "You are Devin.", "node_meta": { "is_system_prefix": true } },
+        { "node_id": 2, "parent": 1, "role": "user", "message_id": "r-user-1", "is_user_input": true, "content": "Summarize the release notes for 1.4." },
+        { "node_id": 3, "parent": 2, "role": "assistant", "message_id": "r-asst-1", "content": "Release 1.4 adds offline mode." },
+        { "node_id": 4, "parent": 3, "role": "assistant", "message_id": "r-asst-1", "content": "Release 1.4 adds offline mode." },
+        { "node_id": 5, "parent": 4, "role": "user", "message_id": "r-user-2", "is_user_input": true, "content": "What about release 1.5?" },
+        { "node_id": 6, "parent": 5, "role": "assistant", "message_id": "r-asst-2", "content": "Release 1.5 is not out yet." }
+      ],
+      "expected": [
+        { "role": "user", "content": "Summarize the release notes for 1.4.", "turnId": "r-user-1" },
+        { "role": "assistant", "content": "Release 1.4 adds offline mode.", "turnId": "r-asst-1" },
+        { "role": "user", "content": "What about release 1.5?", "turnId": "r-user-2" },
+        { "role": "assistant", "content": "Release 1.5 is not out yet.", "turnId": "r-asst-2" }
+      ]
+    }
+  ]
+}

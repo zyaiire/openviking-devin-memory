@@ -59,11 +59,11 @@ export const devin = {
     return typeof input.prompt === "string" ? cleanDevinText(input.prompt) : "";
   },
   async capture(ctx, state, event) {
-    const transcript = buildDevinTurns(ctx.input, state, ctx.cfg);
+    const transcript = await buildDevinTurns(ctx.input, state);
     if (transcript.status !== "ok") {
       ctx.log(`capture_${transcript.status}`, transcript.error ? { error: transcript.error } : {});
-      return null;
     }
+    if (transcript.warning) ctx.log("capture_schema_warning", { warning: transcript.warning });
     const plan = buildIncrementalCapturePlan(transcript.turns, state, ctx.cfg);
     let next;
     if (plan.toSend.length > 0) {

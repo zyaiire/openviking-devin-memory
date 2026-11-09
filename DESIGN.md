@@ -1,7 +1,6 @@
 # Devin host contract (provisional)
 
-Status: **locked product choices + implementation decisions (2026-11-09) + partial local inspection**.
-Capture decode is still unproven: the local `sessions.db` has never held a real conversation row. Re-verify against a real local session, then replace “provisional / unverified” notes with measured facts.
+Status: **measured on local CLI / Desktop (2026-11-09)**. Profile, recall, MCP, skills and capture all run end to end on the CLI. Capture decoding is fixture-tested (`tests/`) and checked against every session in a real local `sessions.db` (decoded counts equal distinct typed-prompt and assistant-reply ids). Open items are listed at the end of the sampling matrix.
 
 Working baseline for the next fixture pass (2026-11-09):
 
@@ -10,7 +9,7 @@ Working baseline for the next fixture pass (2026-11-09):
 | Devin CLI (Homebrew) | `3000.11.205` |
 | Devin Desktop bundled binary (`/Applications/Devin.app/.../devin acp`) | `3000.11.238` |
 | `sessions.db` schema migration (`refinery_schema_history` max version) | `20` (`live_row_times`) |
-| Node target | 18+ for profile / recall / MCP; capture needs a Node with `node:sqlite` (exact floor measured in Phase 3) |
+| Node target | 18+ for profile / recall / MCP; capture needs `node:sqlite` without a flag (Node 22.13+ / 23.4+). Older Node logs `capture_no_sqlite` and skips capture |
 
 Versions move fast (205, 216, 234 and 238 all appeared in one week of local logs), so the **schema migration number is the test baseline**, not the CLI version.
 
@@ -65,11 +64,15 @@ Tables of interest:
 1. `turn_id` is `chat_message.message_id` (a UUID Devin stores on every message). Devin rebuilds context by copying nodes; copies keep the same `message_id` and identical content, so `${turn_id}:${role}` dedups them. The adapter never invents turn ids from `node_id` or positions. Hook `prompt_id` is not persisted in the DB and is not used as `turn_id`.
 2. If a message lacks `message_id`, send it without `turn_id`; the shared `incremental-turn-capture.mjs` then dedups by `stableHash(role, content)`, as upstream does when a host id is missing.
 3. Walk the main chain only: start at `sessions.main_chain_id` and follow `parent_node_id` to the root. Never scan all rows (old rebuilt chains remain as separate roots). Skip subagent and summarizer chains. Compaction starts a new root chain whose summary node (role `system`, node `metadata.summarized_from = <old tip node_id>`) replaces the history; when the walk meets `summarized_from`, continue the walk from that old tip so pre-compaction turns stay reachable without depending on the `PreCompact` hook.
-4. Keep only `role = 'user'` with `metadata.is_user_input = true`, and `role = 'assistant'` with non-empty string `content`. Drop `system` (also injected mid-chain), `tool`, and assistant rows that only carry `tool_calls`.
+4. Keep only `role = 'user'` with `metadata.is_user_input = true`, and `role = 'assistant'` with non-empty string `content`. Drop `system` (also injected mid-chain), `tool`, assistant rows that only carry `tool_calls`, and any node whose `metadata.summarized_from` is set. The compaction summarizer writes its own output as an assistant node (`phase: "final_answer"`, `summarized_from` set) on a side chain; it is not on the main chain, and is dropped even if it ever is.
 5. One message is one turn (each has its own `message_id`); assistant messages are not merged.
 6. Strip plugin-injected blocks (`<openviking-context>`, `<relevant-memories>`, `<system-reminder>`) before sending.
 
+**Cursor.** State keeps `lastTurnId` (the last fully acknowledged message) and the shared `capturedTurnIds` set (last 1000). Each capture decodes the main chain and sends only turns after the last occurrence of `lastTurnId`, so long sessions do not depend on the 1000-entry set.
+
 **Branches.** After a rewind or edit, already-sent turns from the abandoned branch stay in OpenViking (no retraction). If the cursor is not on the current main chain, rescan the chain from the start and rely on the acknowledged set to suppress duplicates — the upstream Kimi/ZCode behavior.
+
+**Database path.** `OPENVIKING_DEVIN_SESSIONS_DB` if set, else `$XDG_DATA_HOME/devin/cli/sessions.db`, else `~/.local/share/devin/cli/sessions.db`. Missing file, missing session row, unknown schema, unreadable file and missing `node:sqlite` each log a distinct `capture_<status>` and send nothing; a commit still runs on `SessionEnd` / `PreCompact` for turns sent earlier.
 
 **Commit policy** (rule decided now, outcome measured in Phase 1):
 
@@ -110,6 +113,7 @@ plugin/agent-integrations/
       index.mjs                     ours: export const HOSTS = { devin }
       devin.mjs                     ours: host object (stages, envelope, prompt, capture, normalizeInput)
       devin-turns.mjs               ours: sessions.db decoder
+plugin/skills/                    verbatim upstream codebuddy/cursor skills (4)
 ```
 
 The shared runtime treats the client id as a free string (state under `~/.openviking/hook-state/devin/`, log `devin-hooks.log`), so adding `devin` needs no vendor patch. Two upstream pieces do not know `devin`: `HARNESS_KEYS` in `config-schema.mjs` (only the doctor’s unknown-key check is affected; `plugin.devin` in `ovcli.conf` is still read), and `ov-memory-doctor.mjs`, whose client table is hard-coded, so the doctor is not vendored in v1.
@@ -136,8 +140,10 @@ The shared runtime treats the client id as a free string (state under `~/.openvi
 - [x] `/exit`, Ctrl-C and closing the Desktop window: which fire `SessionEnd` (selects commit policy). CLI: `/exit` and Ctrl-C both fired `SessionEnd` with `reason: "prompt_input_exit"` (user-confirmed which session used which); `-p` fires `reason: "other"`. Desktop: quitting dispatches `SessionEnd` (`reason: "other"`) for every live session of that `devin acp` process. All sampled exits fire `SessionEnd` → **Kimi policy selected**. Known gap: a long-running Desktop commits only when it quits, and a crash/kill fires nothing.
 - [x] Other hook sources seen in the user environment: global Devin and Windsurf hooks (status-bar bridges, no OpenViking). `~/.claude/settings.json` fails to import into Devin (`unknown variant SubagentStart`), so Claude-side hooks do not run in Devin.
 - [x] Plugin `openviking` MCP alongside Cursor’s imported `openviking`: the imported one runs, the plugin’s is silently skipped (see MCP duplication).
-- [ ] Anonymized fixture: hook stdin samples + DB slice + expected turns golden.
-- [ ] Incremental cursor does not double-send on repeated Stop; fail-open when DB missing / locked / unknown schema.
+- [x] Anonymized fixture: `tests/fixtures/hook-stdin.json` (measured stdin shapes) and `tests/fixtures/sessions-db.json` (synthetic chains with the measured topology: compaction with summarizer side chain, resume copy, tool calls, injected system/user rows), each with expected turns.
+- [x] Incremental cursor does not double-send on repeated Stop; fail-open when DB missing / unreadable / unknown schema (`tests/`). WAL-only rows are visible to the read-only reader.
+- [x] End to end on CLI against a recording fake OpenViking server: SessionStart profile reads, one recall search, Stop sent the user and assistant messages with `turn_id` = `message_id`, SessionEnd committed.
+- [ ] Still open: one rewind/edit sample; Desktop `SessionStart` for installed-plugin hooks; Devin `PreToolUse` tool names (URI guard); whether a timed-out hook's children are killed (`detachesCapture`); a subagent session.
 
 ## References
 

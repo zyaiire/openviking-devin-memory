@@ -5,8 +5,10 @@ Community OpenViking memory plugin for local Devin (CLI and Desktop). Host contr
 ## Layout
 
 - `plugin/` is the installable Devin plugin (`devin plugins install zyaiire/openviking-devin-memory#plugin`). Only runtime files go here: Devin injects a plugin-root `AGENTS.md` into every user session, so contributor docs stay at the repo root.
-- `plugin/agent-integrations/memory-plugin-shared/` and the upstream files under `plugin/agent-integrations/devin/` are vendored from OpenViking. Never edit them; bump the pin as described in [plugin/agent-integrations/PIN.md](plugin/agent-integrations/PIN.md).
+- `plugin/agent-integrations/memory-plugin-shared/`, the upstream files under `plugin/agent-integrations/devin/`, and `plugin/skills/` are vendored from OpenViking. Never edit them; bump the pin as described in [plugin/agent-integrations/PIN.md](plugin/agent-integrations/PIN.md).
 - Devin-specific code is `plugin/agent-integrations/devin/hosts/index.mjs`, `devin.mjs` and `devin-turns.mjs`.
+
+Tests live in `tests/` (`npm test`, Node 22.13+ for `node:sqlite`). `tests/fixtures/` holds synthetic `sessions.db` slices and hook stdin shaped like measured Devin data.
 
 ## Rules
 
