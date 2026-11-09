@@ -56,6 +56,17 @@ Check with `shasum -a 256 <file>` from this directory.
 | `devin/servers/mcp-proxy.mjs` | `fe7c9e833887e28d` |
 | `devin/hosts/incremental-turn-capture.mjs` | `7b590aa9f8e819f3` |
 
+## Skills
+
+`plugin/skills/*` are unmodified copies of upstream `examples/agent-hook-plugin/hosts/codebuddy/skills/*` (identical to the Cursor host's copies). Hashes are relative to `plugin/`.
+
+| File | SHA-256 |
+| --- | --- |
+| `skills/openviking-memory/SKILL.md` | `7acc32358ba98c8b` |
+| `skills/openviking-rule-search/SKILL.md` | `252cc2e0e36235ce` |
+| `skills/openviking-skills/SKILL.md` | `83d4d71573b9a6fa` |
+| `skills/ov-experience-memory/SKILL.md` | `9490d86db2fcfa57` |
+
 ## Not vendored
 
 - `scripts/ov-memory-doctor.mjs`: its client table is hard-coded and has no `devin` entry, so it would diagnose the plugin as Cursor.

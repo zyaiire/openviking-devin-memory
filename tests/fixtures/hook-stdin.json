@@ -1,0 +1,9 @@
+{
+  "_comment": "Hook stdin shapes measured on Devin CLI 3000.11.205 / Desktop 3000.11.238; ids are invented.",
+  "session-start": { "hook_event_name": "SessionStart", "session_id": "fixture-compact", "source": "startup" },
+  "user-prompt-submit": { "hook_event_name": "UserPromptSubmit", "session_id": "fixture-compact", "prompt_id": "p-0001", "prompt": "Next, add a CI check for key age." },
+  "user-prompt-submit-desktop": { "hook_event_name": "UserPromptSubmit", "session_id": "fixture-compact", "prompt_id": "p-0002", "prompt": "Next, add a CI check for key age.", "source": "user" },
+  "stop": { "hook_event_name": "Stop", "session_id": "fixture-compact", "prompt_id": "p-0001", "stop_hook_active": false, "last_assistant_message": "Added `.github/workflows/key-age.yml`." },
+  "pre-compact": { "hook_event_name": "PreCompact", "session_id": "fixture-compact", "trigger": "manual", "cwd": "/tmp/fixture-project", "model": "fixture-model", "turn_id": "p-0001", "transcript_path": "/tmp/fixture-transcript.json" },
+  "session-end": { "hook_event_name": "SessionEnd", "session_id": "fixture-compact", "prompt_id": "p-0001", "reason": "prompt_input_exit" }
+}
