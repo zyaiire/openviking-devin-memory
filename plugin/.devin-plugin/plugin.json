@@ -1,0 +1,10 @@
+{
+  "name": "openviking-memory",
+  "version": "0.1.0",
+  "description": "Long-term semantic memory for local Devin (CLI and Desktop), powered by OpenViking. Injects your profile at session start and relevant memories on each prompt, and exposes OpenViking MCP tools.",
+  "author": { "name": "zyaiire" },
+  "homepage": "https://github.com/zyaiire/openviking-devin-memory",
+  "repository": "https://github.com/zyaiire/openviking-devin-memory",
+  "license": "Apache-2.0",
+  "keywords": ["memory", "openviking", "devin", "long-term-memory"]
+}

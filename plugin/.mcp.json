@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "openviking": {
+      "command": "node",
+      "args": ["${PLUGIN_ROOT}/agent-integrations/devin/servers/mcp-proxy.mjs"],
+      "env": { "OPENVIKING_HOOK_SOURCE": "devin" }
+    }
+  }
+}

@@ -6,9 +6,19 @@ Gives Devin automatic recall / capture plus OpenViking MCP tools where the host 
 
 ## Status
 
-Research complete enough to proceed with a **scoped MVP**. There is **no** official OpenViking Devin host and **no** product-related Devin issue/PR on [`volcengine/OpenViking`](https://github.com/volcengine/OpenViking) (as of 2026-10-30).
+Scaffold stage. There is no official OpenViking Devin host; the community adapter is tracked upstream in [volcengine/OpenViking#7267](https://github.com/volcengine/OpenViking/issues/7267).
 
-Devin’s public surface already has plugins, lifecycle hooks, and MCP — a community plugin is realistic. Capture must not be claimed until the local session store is fixture-tested.
+The plugin installs and runs on local Devin CLI with the OpenViking runtime vendored from upstream. Capture (saving conversations) is not implemented yet: it stays off until the `sessions.db` decoder is fixture-tested.
+
+## Install (development)
+
+```sh
+devin plugins install zyaiire/openviking-devin-memory#plugin
+# or from a checkout
+devin plugins install --local ./plugin
+```
+
+Needs Node 18+ on `PATH` and an OpenViking server configured in `~/.openviking/ovcli.conf`. If you also use OpenViking in Cursor, Devin imports Cursor’s `openviking` MCP server and skips the plugin’s; set `read_config_from.cursor: false` in Devin’s config to use the plugin’s.
 
 ## Findings (host)
 
@@ -32,11 +42,11 @@ Devin’s public surface already has plugins, lifecycle hooks, and MCP — a com
 
 ## Not yet
 
-- Pinned Devin CLI version + verified hook envelopes / compaction event names
 - SQLite transcript decoder + capture fixtures
-- Installer / doctor
+- Memory skills
+- Doctor
 - Upstream PR + community-plugins docs link
 
 ## License
 
-TBD (likely Apache-2.0 to match OpenViking).
+[Apache-2.0](LICENSE). The vendored OpenViking runtime under `plugin/agent-integrations/` is Apache-2.0 from upstream `examples/` (see [PIN.md](plugin/agent-integrations/PIN.md)).

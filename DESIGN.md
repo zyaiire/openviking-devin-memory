@@ -80,15 +80,27 @@ Tables of interest:
 
 **Compatibility gate.** Before each capture, check that the needed columns (`message_nodes.node_id`, `parent_node_id`, `chat_message`, `sessions.main_chain_id`) and JSON paths (`$.role`, `$.content`, `$.metadata.is_user_input`) exist. Missing → skip capture and log “unknown schema”. Higher migration number with all fields present → capture and log a warning.
 
-**MCP duplication.** Devin imports Cursor’s MCP servers by default (`read_config_from.cursor`), so a user with Cursor OpenViking already gets Cursor’s `mcp-proxy.mjs` inside Devin. The plugin still ships its own `openviking` server (same upstream proxy, same OpenViking backend); no detection code. README notes that `read_config_from.cursor: false` removes the imported copy.
+**MCP duplication.** Devin imports Cursor’s MCP servers by default (`read_config_from.cursor`), so a user with Cursor OpenViking already gets Cursor’s `mcp-proxy.mjs` inside Devin. Measured: when both define `openviking`, the imported Cursor server starts and the plugin’s is silently skipped (no error). The plugin still ships its own `openviking` server (same upstream proxy, same OpenViking backend); no detection code. README notes that `read_config_from.cursor: false` makes the plugin’s copy the one that runs.
+
+## Plugin packaging (measured 2026-11-09, CLI 3000.11.205)
+
+The installable plugin is the `plugin/` subdirectory (`devin plugins install zyaiire/openviking-devin-memory#plugin`); the repo root holds contributor docs and tests, because Devin injects a plugin-root `AGENTS.md` into every session as an always-on rule.
+
+- `devin plugins install --local <dir>` copies the plugin to `~/.local/share/devin/cli/plugins/cache/<id>/<version>`. A plugin with no `skills/` installs fine.
+- `hooks.json` in bare form (event names at top level, no `"hooks"` wrapper) is accepted.
+- Hook processes get `DEVIN_PLUGIN_ROOT`, `PLUGIN_ROOT` and `CLAUDE_PLUGIN_ROOT` (all = the cache dir) and `PLUGIN_DATA` (`~/.local/share/devin/cli/plugins/data/<id>`); the command runs through a shell, so any of them works in `hooks.json`. Plugin hooks fire in the CLI, including `SessionStart`.
+- `.mcp.json` is different: `${PLUGIN_ROOT}` and `${CLAUDE_PLUGIN_ROOT}` in `args` are substituted, but **`${DEVIN_PLUGIN_ROOT}` becomes an empty string**. The MCP process itself gets none of these variables, and its cwd is the project dir. So `.mcp.json` must use `${PLUGIN_ROOT}`.
+- End-to-end with the plugin installed and Cursor import off: SessionStart injected the profile, UserPromptSubmit injected recall (state keyed by the real Devin session id and `prompt_id`), and the plugin’s `openviking` MCP server connected.
+- Not yet checked: whether installed-plugin hooks get `SessionStart` under Desktop; Devin’s `PreToolUse` tool names (needed before registering the URI guard); whether Devin kills a timed-out hook’s child processes (until then `detachesCapture` is off).
 
 ## Vendor layout
 
 Pinned to an OpenViking main-repo commit, copied verbatim, mirroring Kimi’s installed layout so upstream relative imports resolve unchanged:
 
 ```text
-agent-integrations/
-  PIN.md                          upstream commit + list of verbatim files (do not edit)
+plugin/agent-integrations/
+  PIN.md                          upstream commit + hash of every verbatim file (do not edit)
+  LICENSE                         upstream examples/LICENSE (Apache-2.0)
   memory-plugin-shared/lib/       verbatim (24 files per lib/MANIFEST)
   devin/
     scripts/                      verbatim (hook.mjs, request-budget.mjs, uri-guard.mjs, …)
@@ -100,7 +112,7 @@ agent-integrations/
       devin-turns.mjs               ours: sessions.db decoder
 ```
 
-The shared runtime treats the client id as a free string (state under `~/.openviking/hook-state/devin/`, log `devin-hooks.log`), so adding `devin` needs no vendor patch.
+The shared runtime treats the client id as a free string (state under `~/.openviking/hook-state/devin/`, log `devin-hooks.log`), so adding `devin` needs no vendor patch. Two upstream pieces do not know `devin`: `HARNESS_KEYS` in `config-schema.mjs` (only the doctor’s unknown-key check is affected; `plugin.devin` in `ovcli.conf` is still read), and `ov-memory-doctor.mjs`, whose client table is hard-coded, so the doctor is not vendored in v1.
 
 ## Explicit non-goals (v1)
 
@@ -123,13 +135,14 @@ The shared runtime treats the client id as a free string (state under `~/.openvi
 - [x] One compaction (manual `/compact`, 2026-11-09): `PreCompact` fires while `main_chain_id` still points at the old tip; then `PostCompaction` and `PostCompact`. Old rows are kept, not rewritten or deleted. The new main chain is system prefix + summary node with `summarized_from` → decoding rule 3. `PreCompact`/`PostCompact` stdin also carries `trigger`, `cwd`, `model`, `turn_id` (equals the hook `prompt_id`) and `transcript_path` (`~/.local/share/devin/cli/transcripts/<id>.json`, `schema_version: ATIF-v1.7`); the transcript is not used (ATIF is out of scope).
 - [x] `/exit`, Ctrl-C and closing the Desktop window: which fire `SessionEnd` (selects commit policy). CLI: `/exit` and Ctrl-C both fired `SessionEnd` with `reason: "prompt_input_exit"` (user-confirmed which session used which); `-p` fires `reason: "other"`. Desktop: quitting dispatches `SessionEnd` (`reason: "other"`) for every live session of that `devin acp` process. All sampled exits fire `SessionEnd` → **Kimi policy selected**. Known gap: a long-running Desktop commits only when it quits, and a crash/kill fires nothing.
 - [x] Other hook sources seen in the user environment: global Devin and Windsurf hooks (status-bar bridges, no OpenViking). `~/.claude/settings.json` fails to import into Devin (`unknown variant SubagentStart`), so Claude-side hooks do not run in Devin.
-- [ ] Plugin `openviking` MCP alongside Cursor’s imported `openviking`: overridden, coexisting, or error.
+- [x] Plugin `openviking` MCP alongside Cursor’s imported `openviking`: the imported one runs, the plugin’s is silently skipped (see MCP duplication).
 - [ ] Anonymized fixture: hook stdin samples + DB slice + expected turns golden.
 - [ ] Incremental cursor does not double-send on repeated Stop; fail-open when DB missing / locked / unknown schema.
 
 ## References
 
 - This repo: [[README.md]], [[specs/devin-ov-memory-mvp.md]]
+- Upstream issue: [volcengine/OpenViking#7267](https://github.com/volcengine/OpenViking/issues/7267)
 - Pattern hosts: OpenViking `examples/agent-hook-plugin/hosts/kimicode/DESIGN.md`, `kimicode-turns.mjs`, `zcode-turns.mjs`, `incremental-turn-capture.mjs`, `scripts/hook.mjs`
 - Devin docs: [hooks overview](https://docs.devin.ai/cli/extensibility/hooks/overview), [configuration](https://docs.devin.ai/cli/reference/configuration)
 - Local store observed: `~/.local/share/devin/cli/sessions.db`

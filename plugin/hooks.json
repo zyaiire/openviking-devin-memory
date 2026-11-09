@@ -1,0 +1,17 @@
+{
+  "SessionStart": [
+    { "hooks": [{ "type": "command", "command": "node \"${DEVIN_PLUGIN_ROOT}/agent-integrations/devin/scripts/hook.mjs\" session-start devin", "timeout": 30 }] }
+  ],
+  "UserPromptSubmit": [
+    { "hooks": [{ "type": "command", "command": "node \"${DEVIN_PLUGIN_ROOT}/agent-integrations/devin/scripts/hook.mjs\" user-prompt-submit devin", "timeout": 20 }] }
+  ],
+  "Stop": [
+    { "hooks": [{ "type": "command", "command": "node \"${DEVIN_PLUGIN_ROOT}/agent-integrations/devin/scripts/hook.mjs\" stop devin", "timeout": 30 }] }
+  ],
+  "PreCompact": [
+    { "hooks": [{ "type": "command", "command": "node \"${DEVIN_PLUGIN_ROOT}/agent-integrations/devin/scripts/hook.mjs\" pre-compact devin", "timeout": 30 }] }
+  ],
+  "SessionEnd": [
+    { "hooks": [{ "type": "command", "command": "node \"${DEVIN_PLUGIN_ROOT}/agent-integrations/devin/scripts/hook.mjs\" session-end devin", "timeout": 30 }] }
+  ]
+}
