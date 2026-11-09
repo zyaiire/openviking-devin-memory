@@ -49,4 +49,4 @@ Needs Node 18+ on `PATH` and an OpenViking server configured in `~/.openviking/o
 
 ## License
 
-Planned Apache-2.0 (root `LICENSE` not added yet). The vendored OpenViking runtime under `plugin/agent-integrations/` is Apache-2.0 from upstream `examples/` (see [PIN.md](plugin/agent-integrations/PIN.md)).
+[Apache-2.0](LICENSE). The vendored OpenViking runtime under `plugin/agent-integrations/` is Apache-2.0 from upstream `examples/` (see [PIN.md](plugin/agent-integrations/PIN.md)).
